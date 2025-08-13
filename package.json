@@ -1,0 +1,17 @@
+{
+  "name": "ifrs",
+  "version": "1.0.0",
+  "description": "IFRS Reports",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ifrs",
+    "reports",
+    "banking",
+    "app"
+  ],
+  "author": "Chidubem Odoh (+2347013518696)",
+  "license": "ISC"
+}
