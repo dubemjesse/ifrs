@@ -14,10 +14,12 @@ app.use(cors());
 connect()
   .then(async (pool) => {
     console.log("Connected to IFRS DB successfully");
-    
+
     // Test query to fetch first 5 records from ifrs_trial_balance
     try {
-      const result = await pool.request().query('SELECT TOP 5 * FROM ifrs_trial_balance');
+      const result = await pool
+        .request()
+        .query("SELECT TOP 5 * FROM ifrs_trial_balance");
       console.log("First 5 records from ifrs_trial_balance:");
       console.log(result.recordset);
     } catch (queryErr) {
