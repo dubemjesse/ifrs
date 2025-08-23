@@ -12,6 +12,8 @@ import {
   FormControlLabel,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { useAuth } from '../contexts/AuthContext';
+import { ApiError } from '../services/api';
 
 const StyledCard = styled(Card)(({ theme }) => ({
   maxWidth: 400,
@@ -44,10 +46,10 @@ const StyledButton = styled(Button)(({ theme }) => ({
 interface SignInProps {
   onSignUpClick: () => void;
   onForgotPasswordClick: () => void;
-  onSignIn: (credentials: { email: string; password: string; rememberMe: boolean }) => Promise<void>;
 }
 
-const SignIn: React.FC<SignInProps> = ({ onSignUpClick, onForgotPasswordClick, onSignIn }) => {
+const SignIn: React.FC<SignInProps> = ({ onSignUpClick, onForgotPasswordClick }) => {
+  const { login, state } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -89,11 +91,14 @@ const SignIn: React.FC<SignInProps> = ({ onSignUpClick, onForgotPasswordClick, o
     setMessage('');
 
     try {
-      await onSignIn({ ...formData, rememberMe });
+      await login(formData.email, formData.password);
       setMessage('Sign in successful!');
       setMessageType('success');
     } catch (error) {
-      setMessage('Invalid credentials. Please try again.');
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Invalid credentials. Please try again.';
+      setMessage(errorMessage);
       setMessageType('error');
     } finally {
       setLoading(false);

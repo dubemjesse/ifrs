@@ -10,6 +10,8 @@ import {
   Alert,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { useAuth } from '../contexts/AuthContext';
+import { ApiError } from '../services/api';
 
 const StyledCard = styled(Card)(({ theme }) => ({
   maxWidth: 400,
@@ -41,12 +43,13 @@ const StyledButton = styled(Button)(({ theme }) => ({
 
 interface SignUpProps {
   onSignInClick: () => void;
-  onSignUp: (userData: { username: string; email: string; password: string; confirmPassword: string }) => Promise<void>;
 }
 
-const SignUp: React.FC<SignUpProps> = ({ onSignInClick, onSignUp }) => {
+const SignUp: React.FC<SignUpProps> = ({ onSignInClick }) => {
+  const { register, state } = useAuth();
   const [formData, setFormData] = useState({
-    username: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -66,10 +69,16 @@ const SignUp: React.FC<SignUpProps> = ({ onSignInClick, onSignUp }) => {
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!formData.username) {
-      newErrors.username = 'Username is required';
-    } else if (formData.username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
+    if (!formData.firstName) {
+      newErrors.firstName = 'First name is required';
+    } else if (formData.firstName.length < 2) {
+      newErrors.firstName = 'First name must be at least 2 characters';
+    }
+
+    if (!formData.lastName) {
+      newErrors.lastName = 'Last name is required';
+    } else if (formData.lastName.length < 2) {
+      newErrors.lastName = 'Last name must be at least 2 characters';
     }
 
     if (!formData.email) {
@@ -80,8 +89,8 @@ const SignUp: React.FC<SignUpProps> = ({ onSignInClick, onSignUp }) => {
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
     }
 
     if (!formData.confirmPassword) {
@@ -101,11 +110,14 @@ const SignUp: React.FC<SignUpProps> = ({ onSignInClick, onSignUp }) => {
     setMessage('');
 
     try {
-      await onSignUp(formData);
+      await register(formData.email, formData.password, formData.firstName, formData.lastName);
       setMessage('Account created successfully!');
       setMessageType('success');
     } catch (error) {
-      setMessage('Failed to create account. Please try again.');
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Failed to create account. Please try again.';
+      setMessage(errorMessage);
       setMessageType('error');
     } finally {
       setLoading(false);
@@ -160,38 +172,72 @@ const SignUp: React.FC<SignUpProps> = ({ onSignInClick, onSignUp }) => {
 
           {/* Form */}
           <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              fullWidth
-              label="Username"
-              variant="outlined"
-              value={formData.username}
-              onChange={handleInputChange('username')}
-              error={!!errors.username}
-              helperText={errors.username}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#fff',
-                  borderRadius: '8px',
-                  '& fieldset': {
-                    borderColor: '#e0e0e0',
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                fullWidth
+                label="First Name"
+                variant="outlined"
+                value={formData.firstName}
+                onChange={handleInputChange('firstName')}
+                error={!!errors.firstName}
+                helperText={errors.firstName}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#fff',
+                    borderRadius: '8px',
+                    '& fieldset': {
+                      borderColor: '#e0e0e0',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#bdbdbd',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#673ab7',
+                    },
                   },
-                  '&:hover fieldset': {
-                    borderColor: '#bdbdbd',
+                  '& .MuiInputLabel-root': {
+                    color: '#666',
+                    fontSize: '14px',
                   },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#673ab7',
+                  '& .MuiInputBase-input': {
+                    color: '#333',
+                    fontSize: '14px',
                   },
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#666',
-                  fontSize: '14px',
-                },
-                '& .MuiInputBase-input': {
-                  color: '#333',
-                  fontSize: '14px',
-                },
-              }}
-            />
+                }}
+              />
+              <TextField
+                fullWidth
+                label="Last Name"
+                variant="outlined"
+                value={formData.lastName}
+                onChange={handleInputChange('lastName')}
+                error={!!errors.lastName}
+                helperText={errors.lastName}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#fff',
+                    borderRadius: '8px',
+                    '& fieldset': {
+                      borderColor: '#e0e0e0',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#bdbdbd',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#673ab7',
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: '#666',
+                    fontSize: '14px',
+                  },
+                  '& .MuiInputBase-input': {
+                    color: '#333',
+                    fontSize: '14px',
+                  },
+                }}
+              />
+            </Box>
             <TextField
               fullWidth
               label="Email"

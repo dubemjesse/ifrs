@@ -10,6 +10,8 @@ import {
   Alert,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { useAuth } from '../contexts/AuthContext';
+import { ApiError } from '../services/api';
 
 const StyledCard = styled(Card)(({ theme }) => ({
   maxWidth: 400,
@@ -41,10 +43,10 @@ const StyledButton = styled(Button)(({ theme }) => ({
 
 interface ForgotPasswordProps {
   onSignInClick: () => void;
-  onPasswordReset: (email: string) => Promise<void>;
 }
 
-const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSignInClick, onPasswordReset }) => {
+const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSignInClick }) => {
+  const { forgotPassword, state } = useAuth();
   const [email, setEmail] = useState('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
@@ -78,11 +80,14 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSignInClick, onPasswo
     setMessage('');
 
     try {
-      await onPasswordReset(email);
+      await forgotPassword(email);
       setMessage('Password reset link sent to your email!');
       setMessageType('success');
     } catch (error) {
-      setMessage('Failed to send reset link. Please try again.');
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Failed to send reset link. Please try again.';
+      setMessage(errorMessage);
       setMessageType('error');
     } finally {
       setLoading(false);
