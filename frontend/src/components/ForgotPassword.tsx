@@ -24,17 +24,17 @@ const StyledCard = styled(Card)(({ theme }) => ({
 }));
 
 const StyledButton = styled(Button)(({ theme }) => ({
-  backgroundColor: '#673ab7',
+  backgroundColor: '#800020',
   borderRadius: '8px',
   height: '44px',
   padding: '0 24px',
   fontSize: '14px',
   fontWeight: 500,
   textTransform: 'none',
-  boxShadow: '0 2px 4px rgba(103, 58, 183, 0.2)',
+  boxShadow: '0 2px 4px rgba(128, 0, 32, 0.2)',
   '&:hover': {
-    backgroundColor: '#5e35b1',
-    boxShadow: '0 4px 8px rgba(103, 58, 183, 0.3)',
+    backgroundColor: '#660019',
+    boxShadow: '0 4px 8px rgba(128, 0, 32, 0.3)',
   },
   '&:disabled': {
     backgroundColor: '#e0e0e0',
@@ -160,7 +160,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSignInClick }) => {
                     borderColor: '#bdbdbd',
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#673ab7',
+                    borderColor: '#800020',
                   },
                 },
                 '& .MuiInputLabel-root': {
@@ -190,7 +190,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSignInClick }) => {
                 <Typography
                   component="span"
                   sx={{
-                    color: '#673ab7',
+                    color: '#800020',
                     cursor: 'pointer',
                     fontWeight: 500,
                     '&:hover': {

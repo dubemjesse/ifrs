@@ -3,23 +3,21 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import {
   CssBaseline,
   Box,
-  Button,
   Typography,
-  AppBar,
-  Toolbar,
 } from "@mui/material";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import SignIn from "./components/SignIn";
 import SignUp from "./components/SignUp";
 import ForgotPassword from "./components/ForgotPassword";
+import Dashboard from "./components/Dashboard";
 
 const theme = createTheme({
   palette: {
     primary: {
-      main: "#673ab7",
+      main: "#800020",
     },
     secondary: {
-      main: "#dc004e",
+      main: "#800020",
     },
   },
   breakpoints: {
@@ -73,55 +71,14 @@ const theme = createTheme({
 type AuthView = "signin" | "signup" | "forgot-password";
 
 function AuthenticatedApp() {
-  const { state, logout } = useAuth();
-  const { user } = state;
+  const { logout } = useAuth();
 
   const handleLogout = async () => {
     await logout();
   };
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh',
-      width: '100vw',
-      display: 'flex',
-      flexDirection: 'column',
-      margin: 0,
-      padding: 0
-    }}>
-      <AppBar position="static" sx={{ width: '100%' }}>
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            IFRS Portal - Welcome, {user?.firstName} {user?.lastName}!
-          </Typography>
-          <Button
-            color="inherit"
-            onClick={handleLogout}
-            sx={{
-              backgroundColor: "rgba(255,255,255,0.1)",
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.2)",
-              },
-            }}
-          >
-            Logout
-          </Button>
-        </Toolbar>
-      </AppBar>
-      <Box sx={{ 
-        flex: 1,
-        width: '100%',
-        p: 3,
-        backgroundColor: '#f5f5f5'
-      }}>
-        <Typography variant="h4" gutterBottom>
-          Dashboard
-        </Typography>
-        <Typography variant="body1">
-          Welcome to the IFRS Portal! You are now logged in.
-        </Typography>
-      </Box>
-    </Box>
+    <Dashboard onLogout={handleLogout} />
   );
 }
 
