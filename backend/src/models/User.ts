@@ -26,13 +26,13 @@ export interface LoginRequest {
 export interface UserResponse {
   id: number;
   email: string;
-  first_name: string;
-  last_name: string;
-  is_active: boolean;
-  email_verified: boolean;
-  created_at: Date;
-  updated_at: Date;
-  last_login: Date | null;
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+  emailVerified: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  lastLogin: Date | null;
 }
 
 export interface AuthResponse {
