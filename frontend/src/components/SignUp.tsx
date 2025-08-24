@@ -8,6 +8,7 @@ import {
   CardContent,
   CircularProgress,
   Alert,
+  Grid,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,11 +16,12 @@ import { ApiError } from '../services/api';
 
 const StyledCard = styled(Card)(({ theme }) => ({
   maxWidth: 400,
-  width: '100%',
-  margin: '0 auto',
-  borderRadius: '12px',
-  boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-  backgroundColor: '#fff',
+  width: '90%',
+  borderRadius: '16px',
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  backdropFilter: 'blur(10px)',
+  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%)',
 }));
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -128,15 +130,21 @@ const SignUp: React.FC<SignUpProps> = ({ onSignInClick }) => {
     <Box
       sx={{
         minHeight: '100vh',
+        width: '100vw',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        padding: 2,
+        backgroundColor: '#f0f2f5',
+        position: 'fixed',
+        top: 0,
+        left: 0,
       }}
     >
       <StyledCard>
-        <CardContent sx={{ p: 4 }}>
+          <CardContent sx={{ 
+            p: { xs: 3, sm: 4 },
+            '&:last-child': { pb: { xs: 3, sm: 4 } }
+          }}>
           {/* Header */}
           <Box sx={{ textAlign: 'center', mb: 4 }}>
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>

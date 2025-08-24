@@ -22,6 +22,52 @@ const theme = createTheme({
       main: "#dc004e",
     },
   },
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 600,
+      md: 900,
+      lg: 1200,
+      xl: 1536,
+    },
+  },
+  typography: {
+    h4: {
+      fontSize: '1.75rem',
+      '@media (max-width:600px)': {
+        fontSize: '1.5rem',
+      },
+    },
+    h5: {
+      fontSize: '1.5rem',
+      '@media (max-width:600px)': {
+        fontSize: '1.25rem',
+      },
+    },
+    h6: {
+      fontSize: '1.25rem',
+      '@media (max-width:600px)': {
+        fontSize: '1.125rem',
+      },
+    },
+  },
+  components: {
+    MuiContainer: {
+      defaultProps: {
+        maxWidth: 'lg',
+      },
+      styleOverrides: {
+        root: {
+          paddingLeft: '16px',
+          paddingRight: '16px',
+          '@media (max-width:600px)': {
+            paddingLeft: '8px',
+            paddingRight: '8px',
+          },
+        },
+      },
+    },
+  },
 });
 
 type AuthView = "signin" | "signup" | "forgot-password";
@@ -35,8 +81,15 @@ function AuthenticatedApp() {
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static">
+    <Box sx={{ 
+      minHeight: '100vh',
+      width: '100vw',
+      display: 'flex',
+      flexDirection: 'column',
+      margin: 0,
+      padding: 0
+    }}>
+      <AppBar position="static" sx={{ width: '100%' }}>
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             IFRS Portal - Welcome, {user?.firstName} {user?.lastName}!
@@ -55,7 +108,12 @@ function AuthenticatedApp() {
           </Button>
         </Toolbar>
       </AppBar>
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ 
+        flex: 1,
+        width: '100%',
+        p: 3,
+        backgroundColor: '#f5f5f5'
+      }}>
         <Typography variant="h4" gutterBottom>
           Dashboard
         </Typography>
