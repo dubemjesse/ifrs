@@ -44,10 +44,19 @@ export class AuthService {
     return crypto.randomBytes(32).toString('hex');
   }
 
-  // Convert User to UserResponse (remove sensitive data)
+  // Convert User to UserResponse (remove sensitive data and convert to camelCase)
   static toUserResponse(user: User): UserResponse {
-    const { password_hash, ...userResponse } = user;
-    return userResponse;
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      isActive: user.is_active,
+      emailVerified: user.email_verified,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+      lastLogin: user.last_login
+    };
   }
 
   // Register new user
@@ -80,8 +89,7 @@ export class AuthService {
 
       const newUser = insertResult.recordset[0] as User;
       const userResponse = this.toUserResponse(newUser);
-
-      // Generate JWT token
+      
       const token = this.generateToken({
         userId: newUser.id,
         email: newUser.email
@@ -129,7 +137,7 @@ export class AuthService {
       );
 
       const userResponse = this.toUserResponse(user);
-      userResponse.last_login = new Date(); // Update the response with current login time
+      userResponse.lastLogin = new Date(); // Update the response with current login time
 
       // Generate JWT token
       const token = this.generateToken({
