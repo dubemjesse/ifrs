@@ -120,25 +120,13 @@ const SignIn: React.FC<SignInProps> = ({ onSignUpClick, onForgotPasswordClick })
         <CardContent sx={{ p: 4 }}>
           {/* Header */}
           <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Box
-              sx={{
-                width: 60,
-                height: 60,
-                borderRadius: '50%',
-                backgroundColor: '#673ab7',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 16px',
-              }}
-            >
-              <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
-                I
-              </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+              <img 
+                src="/kenechukwu_logo.png" 
+                alt="Kenechukwu Microfinance Bank" 
+                style={{ height: '120px', width: 'auto' }}
+              />
             </Box>
-            <Typography variant="h5" sx={{ fontWeight: 600, color: '#333', mb: 1 }}>
-              IFRS Portal
-            </Typography>
             <Typography variant="body2" sx={{ color: '#666' }}>
               Enter your credentials to continue
             </Typography>

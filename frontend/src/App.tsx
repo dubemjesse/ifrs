@@ -1,23 +1,30 @@
-import React, { useState } from 'react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { CssBaseline, Box, Button, Typography, AppBar, Toolbar } from '@mui/material';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import SignIn from './components/SignIn';
-import SignUp from './components/SignUp';
-import ForgotPassword from './components/ForgotPassword';
+import { useState } from "react";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import {
+  CssBaseline,
+  Box,
+  Button,
+  Typography,
+  AppBar,
+  Toolbar,
+} from "@mui/material";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import SignIn from "./components/SignIn";
+import SignUp from "./components/SignUp";
+import ForgotPassword from "./components/ForgotPassword";
 
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#673ab7',
+      main: "#673ab7",
     },
     secondary: {
-      main: '#dc004e',
+      main: "#dc004e",
     },
   },
 });
 
-type AuthView = 'signin' | 'signup' | 'forgot-password';
+type AuthView = "signin" | "signup" | "forgot-password";
 
 function AuthenticatedApp() {
   const { state, logout } = useAuth();
@@ -34,13 +41,13 @@ function AuthenticatedApp() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             IFRS Portal - Welcome, {user?.firstName} {user?.lastName}!
           </Typography>
-          <Button 
-            color="inherit" 
+          <Button
+            color="inherit"
             onClick={handleLogout}
             sx={{
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              '&:hover': {
-                backgroundColor: 'rgba(255,255,255,0.2)',
+              backgroundColor: "rgba(255,255,255,0.1)",
+              "&:hover": {
+                backgroundColor: "rgba(255,255,255,0.2)",
               },
             }}
           >
@@ -61,25 +68,21 @@ function AuthenticatedApp() {
 }
 
 function UnauthenticatedApp() {
-  const [currentView, setCurrentView] = useState<AuthView>('signin');
+  const [currentView, setCurrentView] = useState<AuthView>("signin");
 
   return (
     <>
-      {currentView === 'signin' && (
+      {currentView === "signin" && (
         <SignIn
-          onSignUpClick={() => setCurrentView('signup')}
-          onForgotPasswordClick={() => setCurrentView('forgot-password')}
+          onSignUpClick={() => setCurrentView("signup")}
+          onForgotPasswordClick={() => setCurrentView("forgot-password")}
         />
       )}
-      {currentView === 'signup' && (
-        <SignUp
-          onSignInClick={() => setCurrentView('signin')}
-        />
+      {currentView === "signup" && (
+        <SignUp onSignInClick={() => setCurrentView("signin")} />
       )}
-      {currentView === 'forgot-password' && (
-        <ForgotPassword
-          onSignInClick={() => setCurrentView('signin')}
-        />
+      {currentView === "forgot-password" && (
+        <ForgotPassword onSignInClick={() => setCurrentView("signin")} />
       )}
     </>
   );
@@ -87,11 +90,11 @@ function UnauthenticatedApp() {
 
 function AppContent() {
   const { state } = useAuth();
-  
+
   if (state.isAuthenticated) {
     return <AuthenticatedApp />;
   }
-  
+
   return <UnauthenticatedApp />;
 }
 
