@@ -149,9 +149,9 @@ const SignUp: React.FC<SignUpProps> = ({ onSignInClick }) => {
           <Box sx={{ textAlign: 'center', mb: 4 }}>
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
               <img 
-                src="/kenechukwu_logo.png" 
+                src="/KMFB.png" 
                 alt="Kenechukwu Microfinance Bank" 
-                style={{ height: '120px', width: 'auto' }}
+                style={{ height: '140px', width: 'auto' }}
               />
             </Box>
             <Typography variant="h5" sx={{ fontWeight: 600, color: '#333', mb: 1 }}>

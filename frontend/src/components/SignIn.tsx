@@ -129,9 +129,9 @@ const SignIn: React.FC<SignInProps> = ({ onSignUpClick, onForgotPasswordClick })
           <Box sx={{ textAlign: 'center', mb: 4 }}>
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
               <img 
-                src="/kenechukwu_logo.png" 
+                src="/KMFB.png" 
                 alt="Kenechukwu Microfinance Bank" 
-                style={{ height: '120px', width: 'auto' }}
+                style={{ height: '140px', width: 'auto' }}
               />
             </Box>
             <Typography variant="body2" sx={{ color: '#666' }}>
@@ -268,7 +268,7 @@ const SignIn: React.FC<SignInProps> = ({ onSignUpClick, onForgotPasswordClick })
                 <Typography
                   component="span"
                   sx={{
-                    color: '#673ab7',
+                    color: '#800020',
                     cursor: 'pointer',
                     fontWeight: 500,
                     '&:hover': {

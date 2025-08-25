@@ -71,14 +71,14 @@ const theme = createTheme({
 type AuthView = "signin" | "signup" | "forgot-password";
 
 function AuthenticatedApp() {
-  const { logout } = useAuth();
+  const { logout, state } = useAuth();
 
   const handleLogout = async () => {
     await logout();
   };
 
   return (
-    <Dashboard onLogout={handleLogout} />
+    <Dashboard onLogout={handleLogout} user={state.user} />
   );
 }
 
