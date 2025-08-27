@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   AppBar,
@@ -19,6 +19,8 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsIcon from "@mui/icons-material/Settings";
 import Sidebar from "./Sidebar";
 import DataTable from "./DataTable";
+import type { User } from "../services/api";
+import { DbService, type DbObject, type DbColumnMeta } from "../services/api";
 
 const DashboardContainer = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -59,18 +61,11 @@ const TableContainer = styled(Box)(({ theme }) => ({
   },
 }));
 
-//const StyledAppBar = styled(AppBar)(({ theme }) => ({
-  ///backgroundColor: "#800020",
-  //boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-  //zIndex: theme.zIndex.drawer + 1,
-//}));
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   background: "linear-gradient(90deg,rgb(207, 197, 199) 0%,rgb(122, 16, 16) 100%)",
   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
   zIndex: theme.zIndex.drawer + 1,
 }));
-
-import type { User } from "../services/api";
 
 interface DashboardProps {
   onLogout?: () => void;
@@ -82,8 +77,65 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, user }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // DB Explorer state
+  const [dbObjects, setDbObjects] = useState<DbObject[]>([]);
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  const [columns, setColumns] = useState<DbColumnMeta[]>([]);
+  const [rows, setRows] = useState<Record<string, any>[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25); // dashboard-fitting default
+  const [sort, setSort] = useState<string>("");
+  const [order, setOrder] = useState<'asc' | 'desc'>('asc');
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  useEffect(() => {
+    // fetch list of tables/views on mount
+    (async () => {
+      try {
+        const res = await DbService.listObjects();
+        if (res.success && Array.isArray(res.data)) {
+          setDbObjects(res.data);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    // when selecting a table, fetch columns and first page of rows
+    const fetchData = async () => {
+      if (!selectedTableId) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const [colsRes, rowsRes] = await Promise.all([
+          DbService.getColumns(selectedTableId),
+          DbService.getRows({ tableId: selectedTableId, page, pageSize, sort, order, search }),
+        ]);
+        if (colsRes.success && Array.isArray(colsRes.data)) {
+          setColumns(colsRes.data);
+        }
+        if (rowsRes.success && rowsRes.data) {
+          setRows(rowsRes.data.rows || []);
+          setTotal(rowsRes.data.total || 0);
+        }
+      } catch (err: any) {
+        console.error(err);
+        setError(err?.message || 'Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTableId, page, pageSize, sort, order, search]);
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -113,6 +165,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, user }) => {
     <Sidebar
       selectedReport={selectedReport}
       onReportSelect={handleReportSelect}
+      dbObjects={dbObjects}
+      selectedTableId={selectedTableId}
+      onSelectTable={(id) => {
+        setSelectedTableId(id);
+        setPage(1);
+        setSort("");
+        setOrder('asc');
+        setSearch("");
+      }}
     />
   );
 
@@ -140,9 +201,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, user }) => {
                 height: "65px",
                 width: "auto",
                 objectFit: "contain",
-                //backgroundColor: "white",  
-                //borderRadius: "6px",        
-                //padding: "4px",
               }}
             />
           </Box>
@@ -205,7 +263,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, user }) => {
       </Menu>
 
       <MainContent>
-        <Toolbar /> {/* Spacer for fixed AppBar */}
+        <Toolbar />
         <ContentArea>
           {isMobile ? (
             <Drawer
@@ -213,7 +271,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, user }) => {
               open={mobileOpen}
               onClose={handleDrawerToggle}
               ModalProps={{
-                keepMounted: true, // Better open performance on mobile.
+                keepMounted: true,
               }}
               sx={{
                 "& .MuiDrawer-paper": {
@@ -249,7 +307,29 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, user }) => {
 
             <DataTable
               reportType={selectedReport}
-              data={[]}
+              data={rows}
+              dynamicColumns={columns}
+              total={total}
+              page={page}
+              rowsPerPage={pageSize}
+              sort={sort}
+              order={order}
+              search={search}
+              loading={loading}
+              error={error}
+              onPageChange={(p) => setPage(p)}
+              onRowsPerPageChange={(size) => {
+                setPage(1);
+                setPageSize(size);
+              }}
+              onSortChange={(field, ord) => {
+                setSort(field);
+                setOrder(ord);
+              }}
+              onSearchChange={(q) => {
+                setPage(1);
+                setSearch(q);
+              }}
               onView={(id) => console.log("View:", id)}
               onEdit={(id) => console.log("Edit:", id)}
               onDelete={(id) => console.log("Delete:", id)}

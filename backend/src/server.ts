@@ -5,6 +5,7 @@ import helmet from "helmet";
 import dotenv from "dotenv";
 import { connect } from "./db";
 import authRoutes from "./routes/auth";
+import dbRoutes from "./routes/db";
 import { ErrorHandler } from "./middleware/errorHandler";
 
 // Load environment variables
@@ -69,6 +70,7 @@ app.get("/", (req: Request, res: Response) => {
 
 // API routes
 app.use("/api/auth", authRoutes);
+app.use("/api/db", dbRoutes);
 
 // 404 handler for undefined routes
 app.use(ErrorHandler.notFound);

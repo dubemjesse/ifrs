@@ -1,4 +1,4 @@
-import { body, ValidationChain } from 'express-validator';
+import { body, param, query, ValidationChain } from 'express-validator';
 
 export class AuthValidation {
   // Validation for user registration
@@ -119,6 +119,58 @@ export class AuthValidation {
           }
           return true;
         })
+    ];
+  }
+}
+
+// DB Explorer validation
+export class DbValidation {
+  static getColumns(): ValidationChain[] {
+    return [
+      param('tableId')
+        .isString()
+        .withMessage('tableId is required')
+        .matches(/^[A-Za-z0-9_]+\.[A-Za-z0-9_]+$/)
+        .withMessage('tableId must be in schema.table format with alphanumeric or underscore characters only'),
+    ];
+  }
+
+  static getRows(): ValidationChain[] {
+    return [
+      param('tableId')
+        .isString()
+        .withMessage('tableId is required')
+        .matches(/^[A-Za-z0-9_]+\.[A-Za-z0-9_]+$/)
+        .withMessage('tableId must be in schema.table format with alphanumeric or underscore characters only'),
+      query('page')
+        .optional()
+        .toInt()
+        .isInt({ min: 1 })
+        .withMessage('page must be a positive integer'),
+      query('pageSize')
+        .optional()
+        .toInt()
+        .isInt({ min: 1, max: 100 })
+        .withMessage('pageSize must be between 1 and 100'),
+      query('sort')
+        .optional()
+        .isString()
+        .trim()
+        .isLength({ max: 128 })
+        .withMessage('sort must be a string up to 128 characters'),
+      query('order')
+        .optional()
+        .isString()
+        .trim()
+        .customSanitizer((v) => (typeof v === 'string' ? v.toLowerCase() : v))
+        .isIn(['asc', 'desc'])
+        .withMessage('order must be either asc or desc'),
+      query('search')
+        .optional()
+        .isString()
+        .trim()
+        .isLength({ max: 200 })
+        .withMessage('search must be a string up to 200 characters'),
     ];
   }
 }

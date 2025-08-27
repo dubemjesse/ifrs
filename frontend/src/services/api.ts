@@ -122,22 +122,49 @@ class HttpClient {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
 
-      if (!response.ok) {
-        throw new ApiError(
-          response.status,
-          data.message || "An error occurred",
-          data.errors
-        );
+      // Determine if response has a body we can parse
+      const contentType = response.headers.get("content-type") || "";
+      const hasBody = response.status !== 204 && response.status !== 205;
+
+      let data: any = null;
+      if (hasBody) {
+        try {
+          if (contentType.includes("application/json")) {
+            data = await response.json();
+          } else {
+            const text = await response.text();
+            try {
+              data = JSON.parse(text);
+            } catch {
+              // Fallback when server returns non-JSON body
+              data = text ? { message: text } : null;
+            }
+          }
+        } catch {
+          // Parsing failed; keep data as null and continue to evaluate response.ok
+          data = null;
+        }
       }
 
-      return data;
+      if (!response.ok) {
+        const message = (data && (data.message || data.error)) || response.statusText || "Request failed";
+        const errors = data && data.errors ? data.errors : undefined;
+        throw new ApiError(response.status, message, errors);
+      }
+
+      // For successful responses with no body (e.g., 204)
+      if (!hasBody || data == null) {
+        return { success: true, message: "" } as ApiResponse<T>;
+      }
+
+      return data as ApiResponse<T>;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
       }
-      throw new ApiError(500, "Network error occurred");
+      // True network error (DNS failure, CORS blocked, connection refused, etc.)
+      throw new ApiError(0, "Network error occurred");
     }
   }
 
@@ -280,5 +307,55 @@ export class AuthService {
 }
 
 // Export additional utilities
+// DB Explorer Types
+export interface DbObject {
+  id: string; // schema.name
+  schema: string;
+  name: string;
+  type: 'TABLE' | 'VIEW';
+}
+
+export interface DbColumnMeta {
+  name: string;
+  dataType: string;
+  maxLength?: number;
+  isNullable: boolean;
+}
+
+export interface DbRowsResponse {
+  rows: Record<string, any>[];
+  total: number;
+}
+
+// DB Explorer Service
+export class DbService {
+  static async listObjects() {
+    return httpClient.get<DbObject[]>("/db/tables");
+  }
+
+  static async getColumns(tableId: string) {
+    return httpClient.get<DbColumnMeta[]>(`/db/tables/${encodeURIComponent(tableId)}/columns`);
+  }
+
+  static async getRows(params: {
+    tableId: string;
+    page?: number;
+    pageSize?: number;
+    sort?: string;
+    order?: 'asc' | 'desc';
+    search?: string;
+  }) {
+    const { tableId, page = 1, pageSize = 25, sort = '', order = 'asc', search = '' } = params;
+    const qs = new URLSearchParams({
+      page: String(page),
+      pageSize: String(pageSize),
+      ...(sort ? { sort } : {}),
+      ...(order ? { order } : {}),
+      ...(search ? { search } : {}),
+    });
+    return httpClient.get<DbRowsResponse>(`/db/tables/${encodeURIComponent(tableId)}/rows?${qs.toString()}`);
+  }
+}
+
 export { TokenManager };
 export { httpClient };

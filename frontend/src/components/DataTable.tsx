@@ -12,11 +12,18 @@ import {
   Chip,
   IconButton,
   Tooltip,
+  TablePagination,
+  TableSortLabel,
+  TextField,
+  InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import SearchIcon from '@mui/icons-material/Search';
+import type { DbColumnMeta } from '../services/api';
 
 const StyledTableContainer = styled(Paper)(({ theme }) => ({
   width: '100%',
@@ -25,7 +32,9 @@ const StyledTableContainer = styled(Paper)(({ theme }) => ({
   borderRadius: '12px',
   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
   border: '1px solid #e0e0e0',
-  overflow: 'auto',
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
   [theme.breakpoints.down('md')]: {
     height: 'auto',
     maxHeight: '60vh',
@@ -64,12 +73,35 @@ const ActionButton = styled(IconButton)(({ theme }) => ({
   },
 }));
 
+const ToolbarContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 12,
+  padding: '12px 16px',
+  borderBottom: '1px solid #e0e0e0',
+}));
+
 interface DataTableProps {
   reportType: string;
   data: any[];
   onView?: (id: string) => void;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
+  // Dynamic DB explorer props (optional)
+  dynamicColumns?: DbColumnMeta[];
+  total?: number;
+  page?: number; // 1-based
+  rowsPerPage?: number;
+  sort?: string;
+  order?: 'asc' | 'desc';
+  search?: string;
+  loading?: boolean;
+  error?: string | null;
+  onPageChange?: (page: number) => void; // 1-based
+  onRowsPerPageChange?: (size: number) => void;
+  onSortChange?: (field: string, order: 'asc' | 'desc') => void;
+  onSearchChange?: (q: string) => void;
 }
 
 // Sample data for different report types
@@ -152,13 +184,35 @@ const DataTable: React.FC<DataTableProps> = ({
   data, 
   onView, 
   onEdit, 
-  onDelete 
+  onDelete,
+  dynamicColumns = [],
+  total = 0,
+  page = 1,
+  rowsPerPage = 25,
+  sort = '',
+  order = 'asc',
+  search = '',
+  loading = false,
+  error = null,
+  onPageChange,
+  onRowsPerPageChange,
+  onSortChange,
+  onSearchChange,
 }) => {
-  const tableData = data.length > 0 ? data : getSampleData(reportType);
-  const columns = getColumns(reportType);
-  
+  const isDynamic = dynamicColumns.length > 0;
+  const tableData = data.length > 0 ? data : (isDynamic ? [] : getSampleData(reportType));
+  const columns = isDynamic
+    ? dynamicColumns.map((c) => ({ key: c.name, label: c.name }))
+    : getColumns(reportType);
+
+  const handleHeaderSort = (key: string) => {
+    if (!isDynamic) return; // sorting only for dynamic mode
+    const isAsc = sort === key && order === 'asc';
+    onSortChange?.(key, isAsc ? 'desc' : 'asc');
+  };
+
   const renderCellContent = (row: any, column: any) => {
-    if (column.key === 'actions') {
+    if (!isDynamic && column.key === 'actions') {
       return (
         <Box sx={{ display: 'flex', gap: 0.5 }}>
           <Tooltip title="View Details">
@@ -192,7 +246,7 @@ const DataTable: React.FC<DataTableProps> = ({
       );
     }
     
-    if (column.key === 'amount') {
+    if (!isDynamic && column.key === 'amount') {
       const amount = row[column.key];
       return (
         <Typography 
@@ -207,7 +261,7 @@ const DataTable: React.FC<DataTableProps> = ({
       );
     }
     
-    if (column.key === 'status') {
+    if (!isDynamic && column.key === 'status') {
       return (
         <Chip 
           label={row[column.key]} 
@@ -220,7 +274,7 @@ const DataTable: React.FC<DataTableProps> = ({
     
     return (
       <Typography variant="body2" sx={{ color: '#333' }}>
-        {row[column.key] || row[column.key.replace('account', 'activity')]}
+        {row[column.key] ?? row[column.key?.replace('account', 'activity')] ?? ''}
       </Typography>
     );
   };
@@ -228,45 +282,100 @@ const DataTable: React.FC<DataTableProps> = ({
   return (
     <Box sx={{ width: '100%', height: '100%' }}>
       <StyledTableContainer>
-        <TableContainer>
+        {isDynamic && (
+          <ToolbarContainer>
+            <TextField
+              value={search}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+              placeholder="Search..."
+              size="small"
+              sx={{ maxWidth: 360 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: '#800020' }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            {loading && <CircularProgress size={20} />}
+            {error && (
+              <Typography variant="caption" sx={{ color: '#d32f2f' }}>
+                {error}
+              </Typography>
+            )}
+          </ToolbarContainer>
+        )}
+        <TableContainer sx={{ flex: 1 }}>
           <Table stickyHeader>
           <StyledTableHead>
             <TableRow>
-              {columns.map((column) => (
+              {columns.map((column: any) => (
                 <TableCell 
                   key={column.key} 
                   sx={{ width: column.width }}
+                  sortDirection={isDynamic && sort === column.key ? order : false}
                 >
-                  {column.label}
+                  {isDynamic ? (
+                    <TableSortLabel
+                      active={sort === column.key}
+                      direction={sort === column.key ? order : 'asc'}
+                      onClick={() => handleHeaderSort(column.key)}
+                      sx={{ '& .MuiTableSortLabel-icon': { color: '#fff !important' }, color: '#fff' }}
+                    >
+                      {column.label}
+                    </TableSortLabel>
+                  ) : (
+                    column.label
+                  )}
                 </TableCell>
               ))}
+              {!isDynamic && (
+                <TableCell sx={{ width: '5%' }}>Actions</TableCell>
+              )}
             </TableRow>
           </StyledTableHead>
           <TableBody>
-            {tableData.map((row) => (
-              <StyledTableRow key={row.id}>
-                {columns.map((column) => (
+            {tableData.map((row, idx) => (
+              <StyledTableRow key={idx}>
+                {columns.map((column: any) => (
                   <TableCell key={column.key}>
                     {renderCellContent(row, column)}
                   </TableCell>
                 ))}
+                {!isDynamic && (
+                  <TableCell>
+                    {renderCellContent(row, { key: 'actions' })}
+                  </TableCell>
+                )}
               </StyledTableRow>
             ))}
             {tableData.length === 0 && (
               <TableRow>
                 <TableCell 
-                  colSpan={columns.length} 
+                  colSpan={columns.length + (!isDynamic ? 1 : 0)} 
                   sx={{ textAlign: 'center', py: 4 }}
                 >
                   <Typography variant="body2" sx={{ color: '#666' }}>
-                    No data available for this report
+                    No data available
                   </Typography>
                 </TableCell>
               </TableRow>
-          )}
+            )}
           </TableBody>
           </Table>
         </TableContainer>
+        {isDynamic && (
+          <TablePagination
+            component="div"
+            count={total}
+            page={page - 1}
+            onPageChange={(_, newPage) => onPageChange?.(newPage + 1)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(e) => onRowsPerPageChange?.(parseInt(e.target.value, 10))}
+            rowsPerPageOptions={[10, 25, 50, 100]}
+          />
+        )}
       </StyledTableContainer>
     </Box>
   );
