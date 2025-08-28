@@ -11,9 +11,9 @@ export type SidebarTableConfig = {
 // and the exact display names you want for each.
 export const DB_SIDEBAR_TABLES: SidebarTableConfig[] = [
   {
-    id: 'ifrs-trial-balance',
-    label: 'IFRS Trial Balance',
-    tableId: 'dbo.ifrs_trial_balance',
+    id: "ifrs-trial-balance-2025",
+    label: "IFRS Trial Balance 2025",
+    tableId: "dbo.ifrs_trial_balance",
   },
   // Example: add more tables here as needed
   // { id: 'ifrs-loans-portfolio', label: 'IFRS Loans Portfolio', tableId: 'dbo.ifrs_loans_portfolio' },
