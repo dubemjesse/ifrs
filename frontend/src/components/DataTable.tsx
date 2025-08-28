@@ -44,12 +44,15 @@ const StyledTableContainer = styled(Paper)(({ theme }) => ({
 }));
 
 const StyledTableHead = styled(TableHead)(({ theme }) => ({
-  backgroundColor: '#f9fafb',
+  backgroundColor: '#f3f4f6',
   '& .MuiTableCell-head': {
-    color: '#1f2937',
-    fontWeight: 700,
-    fontSize: '0.9rem',
-    padding: '16px 12px',
+    backgroundColor: '#f3f4f6',
+    color: '#0f172a',
+    fontWeight: 800,
+    fontSize: '1rem',
+    letterSpacing: '0.02em',
+    padding: '18px 14px',
+    lineHeight: 1.2,
     textTransform: 'uppercase',
   },
 }));
@@ -63,8 +66,9 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
   '& .MuiTableCell-root': {
     padding: '12px',
-    fontSize: '0.85rem',
+    fontSize: '0.9rem',
     borderBottom: '1px solid #e0e0e0',
+    color: '#111827',
   },
 }));
 
@@ -403,15 +407,15 @@ const DataTable: React.FC<DataTableProps> = ({
                   sortDirection={isDynamic && sort === column.key ? order : false}
                 >
                   {isDynamic ? (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#1f2937' }}>
-                      <Typography component="span" variant="body2" sx={{ color: '#111827', fontWeight: 700, textTransform: 'uppercase' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#0f172a', minWidth: 0 }}>
+                      <Typography component="span" variant="subtitle2" sx={{ color: '#0f172a', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'inline-block', maxWidth: '100%' }}>
                         {column.label}
                       </Typography>
                       <Tooltip title={sort === column.key ? `Sort ${order === 'asc' ? 'descending' : 'ascending'}` : 'Sort'}>
                         <IconButton
                           size="small"
                           onClick={() => handleHeaderSort(column.key)}
-                          sx={{ color: '#374151', p: 0.25 }}
+                          sx={{ color: '#0f172a', p: 0.25 }}
                           aria-label={`sort by ${column.label}`}
                         >
                           {sort === column.key ? (
