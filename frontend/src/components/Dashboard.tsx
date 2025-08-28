@@ -20,7 +20,8 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import Sidebar from "./Sidebar";
 import DataTable from "./DataTable";
 import type { User } from "../services/api";
-import { DbService, type DbObject, type DbColumnMeta } from "../services/api";
+import { DbService, /* type DbObject, */ type DbColumnMeta } from "../services/api";
+import { DB_SIDEBAR_TABLES } from "../config/sidebarTables";
 
 const DashboardContainer = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -77,9 +78,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, user }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // DB Explorer state
-  const [dbObjects, setDbObjects] = useState<DbObject[]>([]);
-  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  // IFRS Trial Balance dynamic state
   const [columns, setColumns] = useState<DbColumnMeta[]>([]);
   const [rows, setRows] = useState<Record<string, any>[]>([]);
   const [total, setTotal] = useState(0);
@@ -94,24 +93,50 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, user }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-  useEffect(() => {
-    // fetch list of tables/views on mount
-    (async () => {
-      try {
-        const res = await DbService.listObjects();
-        if (res.success && Array.isArray(res.data)) {
-          setDbObjects(res.data);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    })();
+  // Map IFRS report ids to DB tables (curated list)
+  const reportDbMap = useMemo(() => {
+    const m: Record<string, { label: string; tableId: string }> = {};
+    DB_SIDEBAR_TABLES.forEach((t) => { m[t.id] = { label: t.label, tableId: t.tableId }; });
+    return m;
   }, []);
 
+  // Prepare sidebar reports from config
+  const sidebarReports = useMemo(() => (
+    DB_SIDEBAR_TABLES.map(t => ({ id: t.id, label: t.label }))
+  ), []);
+
+  // If current selection is not in config-driven sidebar, auto-switch to first configured item
+  React.useEffect(() => {
+    if (sidebarReports.length && !sidebarReports.some(r => r.id === selectedReport)) {
+      setSelectedReport(sidebarReports[0].id);
+    }
+  }, [sidebarReports, selectedReport]);
+
+  // Derive selected tableId if current report is DB-backed
+  const selectedTableId = useMemo(() => {
+    const entry = (reportDbMap as any)[selectedReport];
+    return entry ? (entry.tableId as string) : null;
+  }, [selectedReport, reportDbMap]);
+
+  // Reset pagination and filters when switching reports
   useEffect(() => {
-    // when selecting a table, fetch columns and first page of rows
+    setPage(1);
+    setSort("");
+    setOrder('asc');
+    setSearch("");
+    setError(null);
+  }, [selectedReport]);
+
+  // Fetch data only for DB-backed reports
+  useEffect(() => {
     const fetchData = async () => {
-      if (!selectedTableId) return;
+      if (!selectedTableId) {
+        // Not a DB-backed report; clear dynamic state
+        setColumns([]);
+        setRows([]);
+        setTotal(0);
+        return;
+      }
       setLoading(true);
       setError(null);
       try {
@@ -121,10 +146,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, user }) => {
         ]);
         if (colsRes.success && Array.isArray(colsRes.data)) {
           setColumns(colsRes.data);
+        } else {
+          setColumns([]);
         }
         if (rowsRes.success && rowsRes.data) {
           setRows(rowsRes.data.rows || []);
           setTotal(rowsRes.data.total || 0);
+        } else {
+          setRows([]);
+          setTotal(0);
         }
       } catch (err: any) {
         console.error(err);
@@ -165,15 +195,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, user }) => {
     <Sidebar
       selectedReport={selectedReport}
       onReportSelect={handleReportSelect}
-      dbObjects={dbObjects}
-      selectedTableId={selectedTableId}
-      onSelectTable={(id) => {
-        setSelectedTableId(id);
-        setPage(1);
-        setSort("");
-        setOrder('asc');
-        setSearch("");
-      }}
+      reports={sidebarReports}
     />
   );
 
@@ -298,7 +320,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, user }) => {
                   mb: 1,
                 }}
               >
-                {getReportTitle(selectedReport)}
+                {(reportDbMap as any)[selectedReport]?.label || getReportTitle(selectedReport)}
               </Typography>
               <Typography variant="body2" sx={{ color: "#666" }}>
                 {getReportDescription(selectedReport)}
@@ -351,6 +373,7 @@ const getReportTitle = (reportId: string): string => {
     "segment-reporting": "Segment Reporting",
     "related-party": "Related Party Transactions",
     "fair-value": "Fair Value Measurements",
+    "ifrs-trial-balance": "IFRS Trial Balance",
   };
   return titles[reportId as keyof typeof titles] || "Financial Report";
 };
@@ -368,6 +391,7 @@ const getReportDescription = (reportId: string): string => {
     "segment-reporting": "Financial information by business segments",
     "related-party": "Transactions and balances with related parties",
     "fair-value": "Fair value measurements and disclosures",
+    "ifrs-trial-balance": "Trial balance data sourced directly from the curated IFRS table",
   };
   return (
     descriptions[reportId as keyof typeof descriptions] ||

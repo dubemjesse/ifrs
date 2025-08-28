@@ -13,7 +13,6 @@ import {
   IconButton,
   Tooltip,
   TablePagination,
-  TableSortLabel,
   TextField,
   InputAdornment,
   CircularProgress,
@@ -23,6 +22,9 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import SwapVertIcon from '@mui/icons-material/SwapVert';
 import type { DbColumnMeta } from '../services/api';
 
 const StyledTableContainer = styled(Paper)(({ theme }) => ({
@@ -42,12 +44,13 @@ const StyledTableContainer = styled(Paper)(({ theme }) => ({
 }));
 
 const StyledTableHead = styled(TableHead)(({ theme }) => ({
-  backgroundColor: '#800020',
+  backgroundColor: '#f9fafb',
   '& .MuiTableCell-head': {
-    color: '#ffffff',
-    fontWeight: 600,
+    color: '#1f2937',
+    fontWeight: 700,
     fontSize: '0.9rem',
     padding: '16px 12px',
+    textTransform: 'uppercase',
   },
 }));
 
@@ -201,9 +204,68 @@ const DataTable: React.FC<DataTableProps> = ({
 }) => {
   const isDynamic = dynamicColumns.length > 0;
   const tableData = data.length > 0 ? data : (isDynamic ? [] : getSampleData(reportType));
-  const columns = isDynamic
+  
+  // Build base columns
+  let columns = isDynamic
     ? dynamicColumns.map((c) => ({ key: c.name, label: c.name }))
     : getColumns(reportType);
+
+  // For IFRS Trial Balance, enforce a curated column order (when available from API)
+  if (isDynamic && reportType === 'ifrs-trial-balance') {
+    const ifrsOrder = [
+      'PositionAsAt',
+      'BankName',
+      'LedgerTypeCode',
+      'LedgerTypeDesc',
+      'LedgerGroupCode',
+      'LedgerGroupDesc',
+      'AccountType',
+      'AccountTypeDesc',
+      'AccountNo',
+      'AccountDesc',
+      'BookBal',
+      'LastMonthBookBalIFRS',
+      'DebitsIFRS',
+      'CreditsIFRS',
+      'BookBalIFRS',
+    ];
+    const orderSet = new Set(ifrsOrder);
+    const pickByKey = (k: string) => columns.find((c: any) => (c.key || c.name) === k);
+    const inOrder = ifrsOrder.map(pickByKey).filter(Boolean) as any[];
+    const rest = columns.filter((c: any) => !orderSet.has((c.key || c.name) as string));
+    columns = [...inOrder, ...rest];
+  }
+
+  // If dynamic and we have no explicit labels, derive user-friendly labels from column names; override for IFRS TB
+  const normalizeLabel = (label: string) => label
+    .replace(/_/g, ' ')
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^./, (c) => c.toUpperCase());
+
+  const ifrsHeaderMap: Record<string, string> = reportType === 'ifrs-trial-balance' ? {
+    PositionAsAt: 'Position As At',
+    BankName: 'Bank Name',
+    LedgerTypeCode: 'Ledger Type Code',
+    LedgerTypeDesc: 'Ledger Type',
+    LedgerGroupCode: 'Ledger Group Code',
+    LedgerGroupDesc: 'Ledger Group',
+    AccountType: 'Account Type (Bool)',
+    AccountTypeDesc: 'Account Type',
+    AccountNo: 'Account No',
+    AccountDesc: 'Account Description',
+    BookBal: 'Book Balance',
+    LastMonthBookBalIFRS: 'Last Month Book Balance (IFRS)',
+    DebitsIFRS: 'Debits (IFRS)',
+    CreditsIFRS: 'Credits (IFRS)',
+    BookBalIFRS: 'Book Balance (IFRS)'
+  } : {};
+
+  const resolvedColumns = columns.map((c: any) => ({
+    ...c,
+    label: (ifrsHeaderMap[c.key] || ifrsHeaderMap[c.name]) || c.label || normalizeLabel((c.key || c.name) as string),
+  }));
 
   const handleHeaderSort = (key: string) => {
     if (!isDynamic) return; // sorting only for dynamic mode
@@ -272,6 +334,30 @@ const DataTable: React.FC<DataTableProps> = ({
       );
     }
     
+    if (isDynamic && reportType === 'ifrs-trial-balance' && (column.key === 'PositionAsAt' || column.name === 'PositionAsAt')) {
+      const raw = row[column.key] ?? row[column.name];
+      let date: Date | null = null;
+      if (raw instanceof Date) {
+        date = raw;
+      } else if (typeof raw === 'string' || typeof raw === 'number') {
+        const d = new Date(raw);
+        if (!isNaN(d.getTime())) date = d;
+      } else if (raw && typeof raw === 'object') {
+        const s = typeof (raw as any).toISOString === 'function' ? (raw as any).toISOString() : (raw as any).toString?.();
+        if (s) {
+          const d = new Date(s);
+          if (!isNaN(d.getTime())) date = d;
+        }
+      }
+      const formatted = date
+        ? `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`
+        : (raw ?? '');
+      return (
+        <Typography variant="body2" sx={{ color: '#333' }}>
+          {formatted}
+        </Typography>
+      );
+    }
     return (
       <Typography variant="body2" sx={{ color: '#333' }}>
         {row[column.key] ?? row[column.key?.replace('account', 'activity')] ?? ''}
@@ -310,21 +396,32 @@ const DataTable: React.FC<DataTableProps> = ({
           <Table stickyHeader>
           <StyledTableHead>
             <TableRow>
-              {columns.map((column: any) => (
+              {resolvedColumns.map((column: any) => (
                 <TableCell 
                   key={column.key} 
                   sx={{ width: column.width }}
                   sortDirection={isDynamic && sort === column.key ? order : false}
                 >
                   {isDynamic ? (
-                    <TableSortLabel
-                      active={sort === column.key}
-                      direction={sort === column.key ? order : 'asc'}
-                      onClick={() => handleHeaderSort(column.key)}
-                      sx={{ '& .MuiTableSortLabel-icon': { color: '#fff !important' }, color: '#fff' }}
-                    >
-                      {column.label}
-                    </TableSortLabel>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#1f2937' }}>
+                      <Typography component="span" variant="body2" sx={{ color: '#111827', fontWeight: 700, textTransform: 'uppercase' }}>
+                        {column.label}
+                      </Typography>
+                      <Tooltip title={sort === column.key ? `Sort ${order === 'asc' ? 'descending' : 'ascending'}` : 'Sort'}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleHeaderSort(column.key)}
+                          sx={{ color: '#374151', p: 0.25 }}
+                          aria-label={`sort by ${column.label}`}
+                        >
+                          {sort === column.key ? (
+                            order === 'asc' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />
+                          ) : (
+                            <SwapVertIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                   ) : (
                     column.label
                   )}
@@ -338,7 +435,7 @@ const DataTable: React.FC<DataTableProps> = ({
           <TableBody>
             {tableData.map((row, idx) => (
               <StyledTableRow key={idx}>
-                {columns.map((column: any) => (
+                {resolvedColumns.map((column: any) => (
                   <TableCell key={column.key}>
                     {renderCellContent(row, column)}
                   </TableCell>
@@ -353,7 +450,7 @@ const DataTable: React.FC<DataTableProps> = ({
             {tableData.length === 0 && (
               <TableRow>
                 <TableCell 
-                  colSpan={columns.length + (!isDynamic ? 1 : 0)} 
+                  colSpan={resolvedColumns.length + (!isDynamic ? 1 : 0)} 
                   sx={{ textAlign: 'center', py: 4 }}
                 >
                   <Typography variant="body2" sx={{ color: '#666' }}>

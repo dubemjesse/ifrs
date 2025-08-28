@@ -6,23 +6,19 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Divider,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import AssessmentIcon from "@mui/icons-material/Assessment";
-import TableChartIcon from "@mui/icons-material/TableChart";
-import ViewModuleIcon from "@mui/icons-material/ViewModule";
 
 interface SidebarProps {
   selectedReport: string;
   onReportSelect: (reportId: string) => void;
-  // DB Explorer
-  dbObjects?: { id: string; schema: string; name: string; type: "TABLE" | "VIEW" }[];
-  selectedTableId?: string | null;
-  onSelectTable?: (tableId: string) => void;
+  // Optional custom reports list to display
+  reports?: { id: string; label: string }[];
 }
 
-const reports = [
+const defaultReports = [
   { id: "balance-sheet", label: "Balance Sheet" },
   { id: "income-statement", label: "Income Statement" },
   { id: "cash-flow", label: "Cash Flow" },
@@ -36,14 +32,16 @@ const reports = [
 const Sidebar: React.FC<SidebarProps> = ({
   selectedReport,
   onReportSelect,
-  dbObjects = [],
-  selectedTableId,
-  onSelectTable,
+  reports,
 }) => {
+  const finalReports = reports && reports.length > 0 ? reports : defaultReports;
+
   return (
     <Box
       sx={{
         width: 300,
+        flex: '0 0 300px',
+        flexShrink: 0,
         borderRight: "1px solid #eee",
         height: "100%",
         overflowY: "auto",
@@ -55,56 +53,38 @@ const Sidebar: React.FC<SidebarProps> = ({
           IFRS Reports
         </Typography>
         <List>
-          {reports.map((r) => (
+          {finalReports.map((r) => (
             <ListItem key={r.id} disablePadding>
               <ListItemButton
                 selected={selectedReport === r.id}
                 onClick={() => onReportSelect(r.id)}
+                sx={{ overflow: 'hidden', alignItems: 'center' }}
               >
-                <ListItemIcon>
+                <ListItemIcon sx={{ minWidth: 36 }}>
                   <AssessmentIcon sx={{ color: selectedReport === r.id ? "#800020" : undefined }} />
                 </ListItemIcon>
-                <ListItemText primary={r.label} />
+                <ListItemText
+                  sx={{ m: 0, flex: '1 1 auto', minWidth: 0 }}
+                  primary={
+                    <Tooltip title={r.label} placement="right">
+                      <Typography
+                        noWrap
+                        sx={{
+                          display: 'block',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          maxWidth: '100%',
+                        }}
+                      >
+                        {r.label}
+                      </Typography>
+                    </Tooltip>
+                  }
+                />
               </ListItemButton>
             </ListItem>
           ))}
-        </List>
-      </Box>
-
-      <Divider />
-
-      <Box sx={{ p: 2 }}>
-        <Typography variant="subtitle2" sx={{ color: "#800020", mb: 1 }}>
-          Database Explorer
-        </Typography>
-        <List dense>
-          {dbObjects.length === 0 ? (
-            <Typography variant="body2" sx={{ color: "#999", px: 2, py: 1 }}>
-              No tables or views found.
-            </Typography>
-          ) : (
-            dbObjects.map((obj) => (
-              <ListItem key={obj.id} disablePadding>
-                <ListItemButton
-                  selected={selectedTableId === obj.id}
-                  onClick={() => onSelectTable && onSelectTable(obj.id)}
-                >
-                  <ListItemIcon>
-                    {obj.type === "VIEW" ? (
-                      <ViewModuleIcon sx={{ color: selectedTableId === obj.id ? "#800020" : undefined }} />
-                    ) : (
-                      <TableChartIcon sx={{ color: selectedTableId === obj.id ? "#800020" : undefined }} />
-                    )}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={`${obj.schema}.${obj.name}`}
-                    secondary={obj.type}
-                    primaryTypographyProps={{ noWrap: true }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))
-          )}
         </List>
       </Box>
     </Box>
